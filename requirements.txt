@@ -1,0 +1,7 @@
+langgraph
+langchain-google-genai
+langchain-community
+firecrawl-py
+python-dotenv
+streamlit
+chromadb
