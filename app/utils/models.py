@@ -1,13 +1,13 @@
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 
 load_dotenv()
 
 def get_model():
-    # 1.5 Flash is faster and perfect for the "free" project tier
-    return ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        temperature=0.7,
-        google_api_key=os.getenv("GOOGLE_API_KEY")
+    # llama-3.3-70b-versatile is arguably the best "smart" model on Groq right now
+    return ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=os.getenv("GROQ_API_KEY"),
+        temperature=0.4
     )
