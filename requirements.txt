@@ -1,6 +1,7 @@
 langgraph
 langchain-google-genai
 langchain-community
+langchain-groq
 firecrawl-py
 python-dotenv
 streamlit
