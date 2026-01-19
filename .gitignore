@@ -1,0 +1,28 @@
+# --- AI/ML Specific ---
+.env
+*.env
+secrets.toml
+.streamlit/secrets.toml
+*.log
+
+# --- Vector DB / ChromaDB ---
+# Exclude the local database folder so it doesn't bloat your repo
+chroma_db/
+vector_storage/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+env/
+dist/
+build/
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
