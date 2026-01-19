@@ -6,3 +6,4 @@ firecrawl-py
 python-dotenv
 streamlit
 chromadb
+langchain-chroma
