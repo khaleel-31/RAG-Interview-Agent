@@ -1,9 +1,19 @@
-langgraph
-langchain-google-genai
-langchain-community
-langchain-groq
-firecrawl-py
-python-dotenv
+# Framework & UI
 streamlit
-chromadb
+langgraph
+langchain
+langchain-core
+langchain-community
+
+# AI Models & Logic
+langchain-groq
+langchain-huggingface
+sentence-transformers
+
+# Vector Database & Storage
 langchain-chroma
+chromadb
+pysqlite3-binary
+
+# Utilities
+python-dotenv
