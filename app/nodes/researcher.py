@@ -2,6 +2,7 @@ import os
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from dotenv import load_dotenv
+import streamlit as st
 
 load_dotenv()
 
@@ -21,7 +22,7 @@ def researcher_node(state):
     # 2. Initialize Embeddings
     embeddings = HuggingFaceEndpointEmbeddings(
         model="sentence-transformers/all-MiniLM-L6-v2",
-        huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN")
+        huggingfacehub_api_token=st.secrets.get("HUGGINGFACEHUB_API_TOKEN") or os.getenv("HUGGINGFACEHUB_API_TOKEN")
     )
 
     # 3. Connect to ChromaDB
