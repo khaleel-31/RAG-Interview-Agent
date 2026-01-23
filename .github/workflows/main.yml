@@ -22,59 +22,43 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt flake8
-
-      - name: Verify Secrets
-        run: |
-          if [ -z "${{ secrets.HUGGINGFACEHUB_API_TOKEN }}" ]; then
-            echo "⚠️ Warning: HUGGINGFACEHUB_API_TOKEN is missing"
-          fi
+          pip install -r requirements.txt flake8 pytest  # Added pytest here
 
       - name: Lint with Flake8
         run: flake8 . --count --select=E9,F63,F7,F82 --statistics
 
-  # --- STAGE 2: Deployment (Placeholder) ---
+  # --- STAGE 2: Deployment ---
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-test  # Only runs if CI passes
+    needs: build-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Deploy to Production
         run: |
           echo "🚀 Deploying to your hosting provider..."
-          # Add your actual deploy command here (e.g., git push heroku main)
+          # Note: If using Streamlit Cloud, this job is just a visual gate.
 
-  # --- STAGE 3: Smoke Test ---
+  # --- STAGE 3: Specialized Streamlit Smoke Test ---
   smoke-test:
     runs-on: ubuntu-latest
-    needs: deploy  # Only runs after deployment finishes
+    needs: deploy 
     steps:
-      - name: Wait for service to stabilize
-        run: sleep 30 
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Check Health Endpoint
-        run: |
-          RESPONSE=$(curl -sL -b ""-o /dev/null -w "%{http_code}" ${{ secrets.MY_APP_URL }})
-          if [ "$RESPONSE" -ne 200 ]; then
-            echo "❌ Smoke Test Failed: Health check returned $RESPONSE"
-            exit 1
-          fi
-          echo "✅ Smoke Test Passed: Health check returned 200"
-
-      - name: Verify App is Running
-        run: |
-          # Fetch the HTML of the main page
-          CONTENT=$(curl -sL -b "" ${{ secrets.MY_APP_URL }})
-          
-          # Check if the internal Streamlit bootstrap code exists in the HTML
-          if [[ "$CONTENT" != *"stApp"* ]]; then
-            echo "❌ Smoke Test Failed: Streamlit application not detected in response"
-            exit 1
-          fi
-          echo "✅ Smoke Test Passed: Streamlit frontend is live"
-
-
-      - name: Run Streamlit Smoke Test
-        uses: streamlit/streamlit-app-action@v0.0.3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          app-path: main.py  # Point this to your chatbot's entry file   
+          python-version: '3.10'
+
+      - name: Install Test Dependencies
+        run: pip install -r requirements.txt pytest
+
+      - name: Run AppTest Logic
+        env:
+          # Crucial: These keys allow the 'headless' app to initialize
+          HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
+          MY_APP_URL: ${{ secrets.MY_APP_URL }}
+        run: |
+          # This executes your test_app.py file
+          pytest test_app.py
