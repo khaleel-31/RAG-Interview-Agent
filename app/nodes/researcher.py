@@ -6,41 +6,50 @@ import streamlit as st
 
 load_dotenv()
 
+# Singleton embeddings to prevent re-initialization
+_embeddings = HuggingFaceEndpointEmbeddings(
+    model="sentence-transformers/all-MiniLM-L6-v2",
+    huggingfacehub_api_token=st.secrets.get("HUGGINGFACEHUB_API_TOKEN") or os.getenv("HUGGINGFACEHUB_API_TOKEN")
+)
+
 def researcher_node(state):
-    print("--- 🔍 RESEARCHING CONTEXT ---")
+    print("\n--- 🔍 RESEARCHING CONTEXT ---")
     
-    # 1. Improved Query Construction
-    # We prioritize the Job Description (JD) to ensure the retrieved context 
-    # aligns with the role requirements, even if the user's last message is short.
     jd = state.get('job_description', '')
-    last_msg = state["messages"][-1].content
+    messages = state.get("messages", [])
+    current_level = state.get("level", "beginner")
+    last_msg = messages[-1].content if messages else "Getting started"
     
-    # We create a 'hybrid' query that focuses on the JD requirements 
-    # filtered by the current conversation topic.
-    search_query = f"Job Requirements: {jd} | Current Topic: {last_msg}"
+    # 1. Hybrid Search Query
+    search_query = f"Role: {jd} | Topic: {last_msg} | Depth: {current_level}"
 
-    # 2. Initialize Embeddings
-    embeddings = HuggingFaceEndpointEmbeddings(
-        model="sentence-transformers/all-MiniLM-L6-v2",
-        huggingfacehub_api_token=st.secrets.get("HUGGINGFACEHUB_API_TOKEN") or os.getenv("HUGGINGFACEHUB_API_TOKEN")
-    )
+    try:
+        # 2. Connect to Chroma
+        vector_db = Chroma(
+            persist_directory="./chroma_db",
+            embedding_function=_embeddings
+        )
 
-    # 3. Connect to ChromaDB
-    vector_db = Chroma(
-        persist_directory="./chroma_db",
-        embedding_function=embeddings
-    )
+        # 3. Retrieve with a relevance threshold
+        # We fetch more chunks initially to ensure we find high-quality matches
+        docs_with_scores = vector_db.similarity_search_with_relevance_scores(search_query, k=3)
+        
+        # 4. Filter by score (0.0 to 1.0)
+        # If the top result is lower than 0.3, it's likely irrelevant (like Pharmacist vs AI docs)
+        valid_docs = [doc for doc, score in docs_with_scores if score > 0.3]
 
-    # 4. Retrieve Context
-    # Increase k to 3 or 4. Since JDs are broad, pulling a bit more context 
-    # helps the Interviewer stay grounded in the PDF data.
-    docs = vector_db.similarity_search(search_query, k=3)
-    
-    retrieved_context = "\n".join([doc.page_content for doc in docs])
+        if not valid_docs:
+            print("--- ⚠️ DOMAIN MISMATCH: No relevant RAG context found ---")
+            return {"tech_context": "FALLBACK_TO_GENERAL"}
 
-    print(f"--- ✅ Context Retrieved ({len(retrieved_context)} chars) ---")
+        retrieved_context = "\n\n---\n\n".join([doc.page_content for doc in valid_docs])
+        print(f"--- ✅ RAG Context Retrieved ({len(valid_docs)} chunks) ---")
 
-    # 5. Return updated state
+    except Exception as e:
+        print(f"❌ ChromaDB Error: {e}")
+        # On error, we fallback to general knowledge so the interview doesn't crash
+        return {"tech_context": "FALLBACK_TO_GENERAL"}
+
     return {
         "tech_context": retrieved_context
     }

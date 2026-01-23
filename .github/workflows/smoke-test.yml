@@ -1,0 +1,36 @@
+name: Deployment Smoke Test
+
+on:
+  # This allows the main deployment pipeline to trigger this test
+  workflow_run:
+    workflows: ["Production Deployment"]
+    types:
+      - completed
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    # Only run if the deployment itself was successful
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Wait for service to stabilize
+        run: sleep 30 # Gives the server a moment to boot up
+
+      - name: Check Health Endpoint
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://your-app-url.com/health)
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "❌ Smoke Test Failed: Health check returned $RESPONSE"
+            exit 1
+          fi
+          echo "✅ Smoke Test Passed: Health check returned 200"
+
+      - name: Verify Core API Response
+        run: |
+          # Example: Checking if a specific JSON key exists in your API
+          CONTENT=$(curl -s https://your-app-url.com/api/v1/status)
+          if [[ "$CONTENT" != *"\"status\":\"ok\""* ]]; then
+            echo "❌ Smoke Test Failed: API status is not 'ok'"
+            exit 1
+          fi
