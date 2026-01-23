@@ -54,7 +54,7 @@ jobs:
 
       - name: Check Health Endpoint
         run: |
-          RESPONSE=$(curl -sL -o /dev/null -w "%{http_code}" ${{ secrets.MY_APP_URL }}/health)
+          RESPONSE=$(curl -sL -b ""-o /dev/null -w "%{http_code}" ${{ secrets.MY_APP_URL }}/health)
           if [ "$RESPONSE" -ne 200 ]; then
             echo "❌ Smoke Test Failed: Health check returned $RESPONSE"
             exit 1

@@ -4,6 +4,10 @@ import streamlit as st
 from langchain_core.messages import HumanMessage
 from app.graph import app  # Ensure your LangGraph is exported as 'app'
 
+if st.query_params.get("check") == "health":
+    st.write("ok")
+    st.stop()
+
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Adaptive AI Interviewer", page_icon="🤖", layout="wide")
 
