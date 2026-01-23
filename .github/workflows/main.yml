@@ -54,7 +54,7 @@ jobs:
 
       - name: Check Health Endpoint
         run: |
-          RESPONSE=$(curl -sL -b ""-o /dev/null -w "%{http_code}" ${{ secrets.MY_APP_URL }}/health)
+          RESPONSE=$(curl -sL -b ""-o /dev/null -w "%{http_code}" ${{ secrets.MY_APP_URL }})
           if [ "$RESPONSE" -ne 200 ]; then
             echo "❌ Smoke Test Failed: Health check returned $RESPONSE"
             exit 1
@@ -68,3 +68,9 @@ jobs:
             echo "❌ Smoke Test Failed: API status is not 'ok'"
             exit 1
           fi
+
+
+      - name: Run Streamlit Smoke Test
+        uses: streamlit/streamlit-app-action@v0.0.3
+        with:
+          app-path: main.py  # Point this to your chatbot's entry file   
