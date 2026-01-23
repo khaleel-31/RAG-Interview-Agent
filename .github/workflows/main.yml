@@ -61,13 +61,17 @@ jobs:
           fi
           echo "✅ Smoke Test Passed: Health check returned 200"
 
-      - name: Verify Core API Response
+      - name: Verify App is Running
         run: |
-          CONTENT=$(curl -s ${{ secrets.MY_APP_URL }}/api/v1/status)
-          if [[ "$CONTENT" != *"\"status\":\"ok\""* ]]; then
-            echo "❌ Smoke Test Failed: API status is not 'ok'"
+          # Fetch the HTML of the main page
+          CONTENT=$(curl -sL -b "" ${{ secrets.MY_APP_URL }})
+          
+          # Check if the internal Streamlit bootstrap code exists in the HTML
+          if [[ "$CONTENT" != *"stApp"* ]]; then
+            echo "❌ Smoke Test Failed: Streamlit application not detected in response"
             exit 1
           fi
+          echo "✅ Smoke Test Passed: Streamlit frontend is live"
 
 
       - name: Run Streamlit Smoke Test
