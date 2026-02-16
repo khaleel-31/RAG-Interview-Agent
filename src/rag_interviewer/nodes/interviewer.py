@@ -1,16 +1,16 @@
-from app.utils.models import get_model
+from rag_interviewer.utils.models import get_model
 from langchain_core.messages import SystemMessage
-import streamlit as st
+import logging
+from rag_interviewer.logging import get_logger
+
+log = get_logger(__name__)
+
 
 def interviewer_node(state):
     model = get_model()
-    
-    # 1. Fetching essential state
     jd = state.get("job_description", "Technical Role")
     current_level = state.get("level", "beginner")
     tech_context = state.get("tech_context", "")
-    
-    # 2. Simplified prompt to prevent "Chatter"
     system_content = (
         f"You are a Senior Technical Interviewer for: {jd}. "
         f"\n\n--- 📖 TECH DATA ---"
@@ -22,14 +22,9 @@ def interviewer_node(state):
         f"\n4. DO NOT conclude the interview. Just ask the question and stop."
         f"\n\nInterview Level: {current_level}."
     )
-
-    # 3. Message Assembly
     messages = [SystemMessage(content=system_content)] + state["messages"]
-    
-    # 4. Invoke model
     response = model.invoke(messages)
-    
     return {
         "messages": [response],
-        "skill_gap": [] 
+        "skill_gap": []
     }

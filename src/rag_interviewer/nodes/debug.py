@@ -6,6 +6,4 @@ def debug_node(state):
     print(f"Messages Count: {len(state.get('messages', []))}")
     print(f"Skill Gaps: {state.get('skill_gap')}")
     print("="*40 + "\n")
-    
-    # FIX: Return an empty dict to avoid triggering operator.add again
     return {}

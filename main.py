@@ -2,7 +2,10 @@ import os
 import uuid
 import streamlit as st
 from langchain_core.messages import HumanMessage
-from app.graph import app  # Ensure your LangGraph is exported as 'app'
+from rag_interviewer.config import get_config
+from rag_interviewer.logging import get_logger
+logger = get_logger(__name__)
+from rag_interviewer.graph import app  # Ensure your LangGraph is exported as 'app'
 
 if st.query_params.get("check") == "health":
     st.write("ok")
@@ -77,6 +80,15 @@ with st.sidebar:
         with st.expander("🎯 Identified Skill Gaps"):
             for gap in gaps:
                 st.write(f"• {gap}")
+
+# Phase-B UI bridge: seed UI state via UI adapter if available
+try:
+    from rag_interviewer.ui.streamlit_adapter import prepare_ui_state
+    ui_seed = prepare_ui_state({"job_description": jd_text}) if 'jd_text' in locals() else {}
+    if isinstance(ui_seed, dict) and ui_seed.get("job_description"):
+        jd_text = ui_seed["job_description"]
+except Exception:
+    pass
 
 # --- 4. CHAT DISPLAY ---
 # Display historical messages from session state
