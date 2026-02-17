@@ -17,3 +17,8 @@ pysqlite3-binary
 
 # Utilities
 python-dotenv
+
+# MCP (Model Context Protocol)
+mcp
+mcp-server-fetch
+httpx>=0.27.0
