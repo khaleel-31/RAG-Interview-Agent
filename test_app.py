@@ -29,7 +29,8 @@ def test_chat_interaction():
         at.chat_input[0].set_value("Hello, are you ready for the interview?").run()
 
         # Verify the user message appeared in the chat history
-        assert any("Hello" in msg.value for msg in at.markdown), "User message did not appear in chat."
+        user_msg_found = any("Hello" in msg.value for msg in at.markdown)
+        assert user_msg_found, "User message did not appear in chat."
         print("✅ Interaction test passed!")
     else:
         print("⚠️ No chat input found, skipping interaction test.")

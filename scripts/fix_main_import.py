@@ -11,7 +11,8 @@ def fix_main_import(repo_root: Path):
     text = main_py.read_text()
     old = "from rag_interviewer.graph import app  # Ensure your LangGraph is exported as 'app'"
     if old not in text:
-        # If the exact line isn't present, try a relaxed approach by patching the first import occurrence
+        # If the exact line isn't present, try a relaxed approach
+        # by patching the first import occurrence
         pass
     new_block = (
         "try:\n"
