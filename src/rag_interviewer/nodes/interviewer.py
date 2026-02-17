@@ -1,7 +1,9 @@
-from rag_interviewer.utils.models import get_model
-from langchain_core.messages import SystemMessage
 import logging
+
+from langchain_core.messages import SystemMessage
+
 from rag_interviewer.logging import get_logger
+from rag_interviewer.utils.models import get_model
 
 log = get_logger(__name__)
 

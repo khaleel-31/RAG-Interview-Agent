@@ -1,7 +1,8 @@
-import os
-from langchain_groq import ChatGroq
-from dotenv import load_dotenv
 import logging
+import os
+
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
 
 load_dotenv()
 

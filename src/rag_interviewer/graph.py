@@ -44,4 +44,4 @@ workflow.add_conditional_edges(
 memory = MemorySaver()
 app = workflow.compile(checkpointer=memory, interrupt_after=["interviewer"])
 
-print("--- ✅ GRAPH COMPILED SUCCESSFULLY ---")
+log.info("--- ✅ GRAPH COMPILED SUCCESSFULLY ---")

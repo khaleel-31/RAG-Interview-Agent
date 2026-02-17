@@ -1,9 +1,11 @@
+import logging
 import os
+
+from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
-from dotenv import load_dotenv
+
 from rag_interviewer.adapters.embeddings import get_embeddings
-import logging
 
 load_dotenv()
 
