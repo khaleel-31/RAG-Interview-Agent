@@ -7,14 +7,12 @@ import logging
 
 load_dotenv()
 
-日志 = logging.getLogger(__name__)
-
 # Embeddings adapter (DI-friendly)
 _embeddings = get_embeddings()
+_logger = logging.getLogger(__name__)
 
 def researcher_node(state):
-    日志 = 日志  # keep a local ref for readability
-    日志.info("\n--- 🔍 RESEARCHING CONTEXT (moved to src) ---")
+    _logger.info("\n--- 🔍 RESEARCHING CONTEXT ---")
 
     jd = state.get('job_description', '')
     messages = state.get("messages", [])
@@ -29,11 +27,11 @@ def researcher_node(state):
         docs_with_scores = vector_db.similarity_search_with_relevance_scores(search_query, k=3)
         valid_docs = [doc for doc, score in docs_with_scores if score > 0.3]
         if not valid_docs:
-            日志.info("--- ⚠️ DOMAIN MISMATCH: No relevant RAG context found ---")
+            _logger.info("--- ⚠️ DOMAIN MISMATCH: No relevant RAG context found ---")
             return {"tech_context": "FALLBACK_TO_GENERAL"}
         retrieved_context = "\n\n---\n\n".join([doc.page_content for doc in valid_docs])
-        日志.info(f"--- ✅ RAG Context Retrieved ({len(valid_docs)} chunks) ---")
+        _logger.info(f"--- ✅ RAG Context Retrieved ({len(valid_docs)} chunks) ---")
     except Exception as e:
-        日志.error(f"ChromaDB Error: {e}")
+        _logger.error(f"ChromaDB Error: {e}")
         return {"tech_context": "FALLBACK_TO_GENERAL"}
     return {"tech_context": retrieved_context}
