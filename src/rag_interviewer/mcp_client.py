@@ -8,20 +8,35 @@ import asyncio
 from typing import Any, Dict, List, Optional
 from contextlib import asynccontextmanager
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+# Try to import MCP, but provide fallbacks if not available
+try:
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    ClientSession = None
+    StdioServerParameters = None
+    stdio_client = None
 
 
 class MCPInterviewClient:
     """MCP client for interview enhancement tools."""
     
-    def __init__(self, server_params: Optional[StdioServerParameters] = None):
+    def __init__(self, server_params: Optional[Any] = None):
+        if not MCP_AVAILABLE:
+            self._mcp_enabled = False
+            return
+            
         self.server_params = server_params or self._default_server_params()
-        self.session: Optional[ClientSession] = None
+        self.session: Optional[Any] = None
         self._client = None
+        self._mcp_enabled = True
     
-    def _default_server_params(self) -> StdioServerParameters:
+    def _default_server_params(self):
         """Default MCP server configuration."""
+        if not MCP_AVAILABLE:
+            return None
         return StdioServerParameters(
             command="python",
             args=["-m", "mcp_server_fetch"],
@@ -31,6 +46,10 @@ class MCPInterviewClient:
     @asynccontextmanager
     async def connect(self):
         """Async context manager for MCP connection."""
+        if not MCP_AVAILABLE or not self._mcp_enabled:
+            yield self
+            return
+            
         async with stdio_client(self.server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 self.session = session
@@ -47,8 +66,8 @@ class MCPInterviewClient:
         Returns:
             List of documentation snippets
         """
-        if not self.session:
-            raise RuntimeError("MCP client not connected. Use 'async with client.connect()'")
+        if not MCP_AVAILABLE or not self.session:
+            return [{"content": f"MCP not available. Query: {query}", "source": "fallback"}]
         
         try:
             result = await self.session.call_tool(
@@ -72,7 +91,6 @@ class MCPInterviewClient:
         Returns:
             Execution results
         """
-        # This is a placeholder - in production, use a sandboxed environment
         return {
             "output": "Code execution not implemented in basic MCP setup",
             "success": False,
@@ -88,16 +106,15 @@ class MCPInterviewClient:
         Returns:
             List of current trends
         """
-        if not self.session:
-            return ["MCP not connected"]
-        
-        # Placeholder for tech trends
+        # Return static trends (works with or without MCP)
         trends = {
             "AI": ["LLMs", "RAG", "Agent frameworks", "MCP"],
             "cloud": ["Kubernetes", "Serverless", "Multi-cloud"],
-            "python": ["Async/await", "Type hints", "Pattern matching"]
+            "python": ["Async/await", "Type hints", "Pattern matching"],
+            "javascript": ["ES2024", "TypeScript", "React Server Components"],
+            "devops": ["GitOps", "Platform Engineering", "SRE"],
         }
-        return trends.get(topic.lower(), ["General best practices"])
+        return trends.get(topic.lower(), ["General best practices", "Industry standards"])
 
 
 # Synchronous wrapper for use in non-async contexts
@@ -144,3 +161,12 @@ def get_tech_trends_sync(topic: str) -> List[str]:
     except Exception:
         # Return default trends if MCP fails
         return [f"Current trends in {topic}", "Best practices", "Industry standards"]
+
+
+def is_mcp_available() -> bool:
+    """Check if MCP is available and installed.
+    
+    Returns:
+        True if MCP SDK is installed
+    """
+    return MCP_AVAILABLE
