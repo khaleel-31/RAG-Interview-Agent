@@ -129,14 +129,24 @@ if not st.session_state.interview_started:
             # Initial run to trigger Researcher -> Interviewer
             # We catch the first assistant message to show it in UI
             init_msg = ""
-            for event in app.stream(initial_input, config, stream_mode="values"):
-                if "messages" in event:
-                    last_msg = event["messages"][-1]
-                    if last_msg.type == "assistant":
-                        init_msg = last_msg.content
+            try:
+                for event in app.stream(initial_input, config, stream_mode="values"):
+                    if "messages" in event:
+                        last_msg = event["messages"][-1]
+                        if last_msg.type == "assistant":
+                            init_msg = last_msg.content
+            except Exception as e:
+                st.error(f"Error starting interview: {str(e)}")
+                logger.error(f"Interview start error: {e}")
+                st.session_state.interview_started = False
+                import traceback
+                st.code(traceback.format_exc())
+                st.stop()
 
             if init_msg:
                 st.session_state.messages.append({"role": "assistant", "content": init_msg})
+            else:
+                st.warning("No initial message generated. Check if the graph is properly configured.")
             st.rerun()
 
 # B. CHAT INPUT
