@@ -1,9 +1,9 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def fix_main_import(repo_root: Path):
-    main_py = repo_root / 'main.py'
+    main_py = repo_root / "main.py"
     if not main_py.exists():
         print(f"main.py not found at {main_py}")
         return 1
@@ -31,5 +31,5 @@ def main():
     sys.exit(fix_main_import(repo_root))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

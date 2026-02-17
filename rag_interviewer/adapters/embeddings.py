@@ -6,6 +6,7 @@ def get_embeddings():
     """
     try:
         from langchain_huggingface import HuggingFaceEndpointEmbeddings
+
         from rag_interviewer.config import get_config
 
         cfg = get_config()

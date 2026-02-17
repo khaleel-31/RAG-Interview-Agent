@@ -1,9 +1,7 @@
 import logging
-import os
 
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEndpointEmbeddings
 
 from rag_interviewer.adapters.embeddings import get_embeddings
 
@@ -16,7 +14,7 @@ _logger = logging.getLogger(__name__)
 def researcher_node(state):
     _logger.info("\n--- 🔍 RESEARCHING CONTEXT ---")
 
-    jd = state.get('job_description', '')
+    jd = state.get("job_description", "")
     messages = state.get("messages", [])
     current_level = state.get("level", "beginner")
     last_msg = messages[-1].content if messages else "Getting started"

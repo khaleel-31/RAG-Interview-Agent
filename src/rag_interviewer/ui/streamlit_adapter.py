@@ -13,7 +13,6 @@ def render_ui(state=None):
     not enabled, this function will simply return a sentinel value.
     """
     try:
-        import streamlit as st  # type: ignore
         # Basic scaffold: in future we can wire actual UI elements here
         if state is None:
             state = {}

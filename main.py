@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -8,10 +7,12 @@ if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
 import uuid
+
 import streamlit as st
 from langchain_core.messages import HumanMessage
-from rag_interviewer.config import get_config
+
 from rag_interviewer.logging import get_logger
+
 logger = get_logger(__name__)
 try:
     from rag_interviewer.graph import app  # Ensure your LangGraph is exported as 'app'
@@ -54,12 +55,12 @@ config = {"configurable": {"thread_id": st.session_state.thread_id}}
 with st.sidebar:
     st.header("📋 Interview Context")
     jd_text = st.text_area(
-        "Job Description:", 
-        height=200, 
+        "Job Description:",
+        height=200,
         placeholder="Paste JD here...",
         disabled=st.session_state.interview_started
     )
-    
+
     if st.session_state.interview_started:
         if st.button("🔄 Reset Interview", use_container_width=True):
             # Clear everything to start fresh
@@ -69,7 +70,7 @@ with st.sidebar:
 
     st.divider()
     st.header("📈 Live Progress")
-    
+
     # FETCH REAL-TIME STATE FROM GRAPH MEMORY
     try:
         current_state = app.get_state(config).values
@@ -83,11 +84,11 @@ with st.sidebar:
     col1, col2 = st.columns(2)
     col1.metric("Score", f"{score} pts")
     col2.metric("Level", level)
-    
+
     # Dynamic progress bar based on current level threshold
     threshold = 50 if level == "Beginner" else 100
     st.progress(min(score / threshold, 1.0), text=f"Progress: {score}/{threshold}")
-    
+
     if gaps:
         with st.expander("🎯 Identified Skill Gaps"):
             for gap in gaps:
@@ -96,7 +97,7 @@ with st.sidebar:
 # Phase-B UI bridge: seed UI state via UI adapter if available
 try:
     from rag_interviewer.ui.streamlit_adapter import prepare_ui_state
-    ui_seed = prepare_ui_state({"job_description": jd_text}) if 'jd_text' in locals() else {}
+    ui_seed = prepare_ui_state({"job_description": jd_text}) if "jd_text" in locals() else {}
     if isinstance(ui_seed, dict) and ui_seed.get("job_description"):
         jd_text = ui_seed["job_description"]
 except Exception:
@@ -124,7 +125,7 @@ if not st.session_state.interview_started:
                 "skill_gap": [],
                 "job_description": jd_text
             }
-            
+
             # Initial run to trigger Researcher -> Interviewer
             # We catch the first assistant message to show it in UI
             init_msg = ""
@@ -133,7 +134,7 @@ if not st.session_state.interview_started:
                     last_msg = event["messages"][-1]
                     if last_msg.type == "assistant":
                         init_msg = last_msg.content
-            
+
             if init_msg:
                 st.session_state.messages.append({"role": "assistant", "content": init_msg})
             st.rerun()
@@ -146,15 +147,15 @@ if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
-    
+
     # 2. Process Assistant Response
     with st.chat_message("assistant"):
         placeholder = st.empty()
         full_response = ""
-        
+
         # Pass the human answer to the paused graph state
         app.update_state(config, {"messages": [HumanMessage(content=user_input)]})
-        
+
         # Stream the new tokens from the Evaluator and next Interviewer question
         # stream_mode="messages" allows us to see node transitions
         for msg, metadata in app.stream(None, config, stream_mode="messages"):
@@ -163,12 +164,12 @@ if user_input:
                 if metadata["langgraph_node"] == "interviewer":
                     if "---" not in full_response:
                         full_response += "\n\n---\n\n"
-                
+
                 full_response += msg.content
                 placeholder.markdown(full_response + "▌") # Animated cursor
-        
+
         placeholder.markdown(full_response)
         st.session_state.messages.append({"role": "assistant", "content": full_response})
-    
+
     # Final rerun to refresh Sidebar Metrics (Score/Level) based on the new evaluation
     st.rerun()

@@ -1,3 +1,5 @@
+[lint]
 line-length = 88
 extend-select = ["I"]
 select = ["E", "W", "F", "C", "Q", "I"]
+ignore = ["E402"]

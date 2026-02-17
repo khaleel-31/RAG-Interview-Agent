@@ -1,4 +1,3 @@
-import pytest
 
 from rag_interviewer.core.route_logic import route_logic
 
