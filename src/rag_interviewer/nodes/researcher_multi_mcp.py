@@ -18,6 +18,7 @@ from rag_interviewer.mcp_multi_client import (
     search_code_examples
 )
 from rag_interviewer.mcp_config import get_mcp_registry
+from rag_interviewer.mcp_client import get_tech_trends_sync
 
 _logger = get_logger(__name__)
 
@@ -139,50 +140,53 @@ def _get_mcp_context_sync(tech_keywords: List[str]) -> Dict[str, Any]:
     _logger.info(f"Fetching MCP context from {len(enabled_servers)} servers...")
     
     try:
-        # For each tech keyword, try to fetch docs and examples
-        for keyword in tech_keywords[:3]:  # Limit to top 3
-            _logger.info(f"  Searching MCP for: {keyword}")
-            
-            # Fetch documentation (async -> sync wrapper)
+        # First, fetch trends for all keywords (this works reliably)
+        _logger.info("  Fetching tech trends...")
+        for keyword in tech_keywords[:3]:
             try:
-                docs_result = asyncio.run(
+                trends = get_tech_trends_sync(keyword)
+                if trends and trends != [f"Current trends in {keyword}"]:
+                    context["trends"].append({
+                        "keyword": keyword,
+                        "trends": trends
+                    })
+                    _logger.info(f"    ✓ Got trends for {keyword}: {', '.join(trends[:3])}")
+            except Exception as e:
+                _logger.warning(f"    Failed to get trends for {keyword}: {e}")
+        
+        # Try to fetch documentation (may fail if servers don't support fetch)
+        _logger.info("  Fetching documentation (this may take a few seconds)...")
+        for keyword in tech_keywords[:2]:  # Limit to top 2 to avoid timeouts
+            try:
+                # Create new event loop for async operation
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                docs_result = loop.run_until_complete(
                     fetch_documentation(
                         f"{keyword} best practices",
                         sources=["python_docs", "stackoverflow"]
                     )
                 )
+                loop.close()
                 
                 for source, docs in docs_result.items():
-                    if docs:
-                        context["documentation"].append({
-                            "keyword": keyword,
-                            "source": source,
-                            "content": docs[0]["content"][:1000]  # Limit length
-                        })
-                        if source not in context["sources"]:
-                            context["sources"].append(source)
+                    if docs and len(docs) > 0:
+                        content = docs[0].get("content", "")
+                        if content and "fallback" not in content.lower():
+                            context["documentation"].append({
+                                "keyword": keyword,
+                                "source": source,
+                                "content": content[:800]
+                            })
+                            if source not in context["sources"]:
+                                context["sources"].append(source)
+                            _logger.info(f"    ✓ Got docs for {keyword} from {source}")
+                        else:
+                            _logger.warning(f"    Fallback data for {keyword} from {source}")
                 
             except Exception as e:
                 _logger.warning(f"    Docs fetch failed for {keyword}: {e}")
-            
-            # Search code examples
-            try:
-                examples = asyncio.run(
-                    search_code_examples(keyword, language="python")
-                )
-                
-                for example in examples[:2]:  # Top 2 examples
-                    context["code_examples"].append({
-                        "keyword": keyword,
-                        "source": example["source"],
-                        "language": example["language"],
-                        "content": example["content"][:800]
-                    })
-                    if example["source"] not in context["sources"]:
-                        context["sources"].append(example["source"])
-                
-            except Exception as e:
-                _logger.warning(f"    Code search failed for {keyword}: {e}")
     
     except Exception as e:
         _logger.error(f"MCP context fetch failed: {e}")

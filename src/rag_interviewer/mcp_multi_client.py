@@ -216,6 +216,7 @@ class MultiServerMCPClient:
         
         try:
             async with asyncio.timeout(timeout):
+                # Try to call the tool
                 result = await conn.session.call_tool(tool_name, params)
                 return result
         
@@ -225,6 +226,9 @@ class MultiServerMCPClient:
         
         except Exception as e:
             logger.error(f"Query error for {server_name}: {e}")
+            # Log the full exception for debugging
+            import traceback
+            logger.debug(f"Full traceback: {traceback.format_exc()}")
             return None
     
     async def query_best_result(
@@ -278,16 +282,21 @@ async def fetch_documentation(
     results = {}
     
     async with client.connect_all():
-        # Query documentation from all connected servers
+        # Try to fetch from Python docs URL
+        # mcp-server-fetch expects a URL, not a query string
+        url = f"https://docs.python.org/3/search.html?q={query.replace(' ', '+')}"
+        
         query_results = await client.query_all(
             "fetch",
-            {"query": query, "max_length": 5000}
+            {"url": url, "max_length": 5000}
         )
         
         for server_name, result in query_results:
+            content = result.content if hasattr(result, 'content') else str(result)
             results[server_name] = [{
-                "content": result.content if hasattr(result, 'content') else str(result),
-                "source": server_name
+                "content": content[:2000],  # Limit content length
+                "source": server_name,
+                "url": url
             }]
     
     return results
