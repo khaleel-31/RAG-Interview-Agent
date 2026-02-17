@@ -5,7 +5,11 @@ from langchain_core.messages import HumanMessage
 from rag_interviewer.config import get_config
 from rag_interviewer.logging import get_logger
 logger = get_logger(__name__)
-from rag_interviewer.graph import app  # Ensure your LangGraph is exported as 'app'
+try:
+    from rag_interviewer.graph import app  # Ensure your LangGraph is exported as 'app'
+except Exception:
+    # Fallback for environments where the new src layout isn't importable yet
+    from app.graph import app  # type: ignore
 
 if st.query_params.get("check") == "health":
     st.write("ok")
